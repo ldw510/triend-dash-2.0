@@ -73,7 +73,7 @@ var svg2 = d3.select(".dataTwo")
     .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")")
 
-//Read the data
+//Read the data Alan add the reviews data here, if json change the below d3.csv -> d3.json
 d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/2_TwoNum.csv", function(data) {
 
 // Add X axis
