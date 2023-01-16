@@ -58,7 +58,7 @@
         nav : false
     });
 
-    //d3 attempt
+    //d3 attempt one
     
 // set the dimensions and margins of the graph
 var margin = {top: 10, right: 30, bottom: 30, left: 60},
@@ -92,7 +92,9 @@ var y = d3.scaleLinear()
 .domain([0, 500000])
 .range([ height, 0]);
 svg2.append("g")
+.attr("class", "myYaxis")
 .call(d3.axisLeft(y));
+
 
 // Add dots
 svg2.append('g')
@@ -162,6 +164,7 @@ d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/da
       .domain([0,10])
       .range([ 0, width ]);
     svg3.append("g")
+    .attr("class", "myXaxis")   // Note that here we give a class to the X axis, to be able to call it later and modify it
       .attr("transform", "translate(0," + height + ")")
       .call(d3.axisBottom(x));
 
@@ -170,6 +173,8 @@ d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/da
       .domain( [0,20])
       .range([ height, 0 ]);
     svg3.append("g")
+    .attr("class", "myYaxis")
+
       .call(d3.axisLeft(y));
 
     // Initialize line with group a

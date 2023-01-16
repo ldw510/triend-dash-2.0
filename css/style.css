@@ -288,3 +288,29 @@
     background: var(--dark);
     border-color: var(--primary);
 }
+
+.myXaxis line{
+    stroke: white;
+}
+
+.myXaxis path{
+    stroke: white;
+}
+
+.myYaxis line{
+    stroke: white;
+}
+
+.myYaxis path{
+    stroke: white;
+}
+
+
+.myXaxis text{
+    fill: white;
+}
+
+.myYaxis text{
+    fill: white;
+}
+
