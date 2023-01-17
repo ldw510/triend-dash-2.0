@@ -67,7 +67,7 @@ height = 400 - margin.top - margin.bottom;
 // append the svg2 object to the body of the page
 var svg2 = d3.select(".dataTwo")
   .append("svg")
-    .attr("width", width + margin.left + margin.right)
+    .attr("width", "100%")
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform",
@@ -132,13 +132,13 @@ svg2.selectAll("circle")
 
 // set the dimensions and margins of the graph
 var margin = {top: 10, right: 100, bottom: 30, left: 30},
-    width = 300 - margin.left - margin.right,
+    width = 460 - margin.left - margin.right,
     height = 400 - margin.top - margin.bottom;
 
 // append the svg3 object to the body of the page
 var svg3 = d3.select(".lines")
   .append("svg")
-    .attr("width", width + margin.left + margin.right)
+    .attr("width", "100%")
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform",
