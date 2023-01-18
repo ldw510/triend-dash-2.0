@@ -131,141 +131,128 @@ svg2.selectAll("circle")
 
 
 // set the dimensions and margins of the graph
-var margin = {top: 10, right: 100, bottom: 30, left: 30},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
-
-// append the svg3 object to the body of the page
-var svg3 = d3.select(".lines")
+var margin = {top: 10, right: 30, bottom: 30, left: 60},
+width = 300 - margin.left - margin.right,
+height = 400 - margin.top - margin.bottom;
+// append the svg2 object to the body of the page
+var svg3 = d3.select(".my_dataviz")
   .append("svg")
     .attr("width", "100%")
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
+          "translate(" + margin.left + "," + margin.top + ")")
 
-//Read the data
-d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_connectedscatter.csv", function(data) {
+// Map and projection
+var projection = d3.geoMercator()
+    .center([0,20])                // GPS of location to zoom on
+    .scale(99)                       // This is like the zoom
+    .translate([ width/2, height/2 ])
 
-    // List of groups (here I have one group per column)
-    var allGroup = ["valueA", "valueB", "valueC"]
+d3.queue()
+  .defer(d3.json, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")  // World shape
+  .defer(d3.csv, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_gpsLocSurfer.csv") // Position of circles
+  .await(ready);
 
-    // add the options to the button
-    d3.select("#selectButton")
-      .selectAll('myOptions')
-     	.data(allGroup)
+function ready(error, dataGeo, data) {
+
+  // Create a color scale
+  var allContinent = d3.map(data, function(d){return(d.homecontinent)}).keys()
+  var color = d3.scaleOrdinal()
+    .domain(allContinent)
+    .range(d3.schemePaired);
+
+  // Add a scale for bubble size
+  var valueExtent = d3.extent(data, function(d) { return +d.n; })
+  var size = d3.scaleSqrt()
+    .domain(valueExtent)  // What's in the data
+    .range([ 1, 50])  // Size in pixel
+
+  // Draw the map
+  svg3.append("g")
+      .selectAll("path")
+      .data(dataGeo.features)
       .enter()
-    	.append('option')
-      .text(function (d) { return d; }) // text showed in the menu
-      .attr("value", function (d) { return d; }) // corresponding value returned by the button
-
-    // Add X axis --> it is a date format
-    var x = d3.scaleLinear()
-      .domain([0,10])
-      .range([ 0, width ]);
-    svg3.append("g")
-    .attr("class", "myXaxis")   // Note that here we give a class to the X axis, to be able to call it later and modify it
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
-
-    // Add Y axis
-    var y = d3.scaleLinear()
-      .domain( [0,20])
-      .range([ height, 0 ]);
-    svg3.append("g")
-    .attr("class", "myYaxis")
-
-      .call(d3.axisLeft(y));
-
-    // Initialize line with group a
-    var line = svg3
-      .append('g')
       .append("path")
-        .datum(data)
-        .attr("d", d3.line()
-          .x(function(d) { return x(+d.time) })
-          .y(function(d) { return y(+d.valueA) })
+        .attr("fill", "#b8b8b8")
+        .attr("d", d3.geoPath()
+            .projection(projection)
         )
-        .attr("stroke", "white")
-        .style("stroke-width", 4)
-        .style("fill", "none")
+      .style("stroke", "none")
+      .style("opacity", .3)
 
-    // Initialize dots with group a
-    var dot = svg3
-      .selectAll('circle')
-      .data(data)
-      .enter()
-      .append('circle')
-        .attr("cx", function(d) { return x(+d.time) })
-        .attr("cy", function(d) { return y(+d.valueA) })
-        .attr("r", 7)
-        .style("fill", "#fff")
-
-
-    // A function that update the chart
-    function update(selectedGroup) {
-
-      // Create new data with the selection?
-      var dataFilter = data.map(function(d){return {time: d.time, value:d[selectedGroup]} })
-
-      // Give these new data to update line
-      line
-          .datum(dataFilter)
-          .transition()
-          .duration(1000)
-          .attr("d", d3.line()
-            .x(function(d) { return x(+d.time) })
-            .y(function(d) { return y(+d.value) })
-          )
-      dot
-        .data(dataFilter)
-        .transition()
-        .duration(1000)
-          .attr("cx", function(d) { return x(+d.time) })
-          .attr("cy", function(d) { return y(+d.value) })
-    }
-
-    // When the button is changed, run the updateChart function
-    d3.select("#selectButton").on("change", function(d) {
-        // recover the option that has been chosen
-        var selectedOption = d3.select(this).property("value")
-        // run the updateChart function with this selected option
-        update(selectedOption)
-    })
-
-})
-    // Chart Global Color
-    Chart.defaults.color = "#6C7293";
-    Chart.defaults.borderColor = "#000000";
+  // Add circles:
+  svg3
+    .selectAll("myCircles")
+    .data(data.sort(function(a,b) { return +b.n - +a.n }).filter(function(d,i){ return i<1000 }))
+    .enter()
+    .append("circle")
+      .attr("cx", function(d){ return projection([+d.homelon, +d.homelat])[0] })
+      .attr("cy", function(d){ return projection([+d.homelon, +d.homelat])[1] })
+      .attr("r", function(d){ return size(+d.n) })
+      .style("fill", function(d){ return color(d.homecontinent) })
+      .attr("stroke", function(d){ if(d.n>2000){return "black"}else{return "none"}  })
+      .attr("stroke-width", 1)
+      .attr("fill-opacity", .4)
 
 
-    // Worldwide Sales Chart
-    var ctx1 = $("#worldwide-sales").get(0).getContext("2d");
-    var myChart1 = new Chart(ctx1, {
-        type: "bar",
-        data: {
-            labels: ["2016", "2017", "2018", "2019", "2020", "2021", "2022"],
-            datasets: [{
-                    label: "USA",
-                    data: [15, 30, 55, 65, 60, 80, 95],
-                    backgroundColor: "rgba(235, 22, 22, .7)"
-                },
-                {
-                    label: "UK",
-                    data: [8, 35, 40, 60, 70, 55, 75],
-                    backgroundColor: "rgba(235, 22, 22, .5)"
-                },
-                {
-                    label: "AU",
-                    data: [12, 25, 45, 55, 65, 70, 60],
-                    backgroundColor: "rgba(235, 22, 22, .3)"
-                }
-            ]
-            },
-        options: {
-            responsive: true
-        }
-    });
+
+  // Add title and explanation
+  svg3
+    .append("text")
+      .attr("text-anchor", "end")
+      .style("fill", "black")
+      .attr("x", width - 10)
+      .attr("y", height - 30)
+      .attr("width", 90)
+      .html("WHERE SURFERS LIVE")
+      .style("font-size", 14)
+
+
+  // --------------- //
+  // ADD LEGEND //
+  // --------------- //
+
+  // Add legend: circles
+  var valuesToShow = [100,4000,15000]
+  var xCircle = 40
+  var xLabel = 90
+  svg3
+    .selectAll("legend")
+    .data(valuesToShow)
+    .enter()
+    .append("circle")
+      .attr("cx", xCircle)
+      .attr("cy", function(d){ return height - size(d) } )
+      .attr("r", function(d){ return size(d) })
+      .style("fill", "none")
+      .attr("stroke", "black")
+
+  // Add legend: segments
+  svg3
+    .selectAll("legend")
+    .data(valuesToShow)
+    .enter()
+    .append("line")
+      .attr('x1', function(d){ return xCircle + size(d) } )
+      .attr('x2', xLabel)
+      .attr('y1', function(d){ return height - size(d) } )
+      .attr('y2', function(d){ return height - size(d) } )
+      .attr('stroke', 'black')
+      .style('stroke-dasharray', ('2,2'))
+
+  // Add legend: labels
+  svg3
+    .selectAll("legend")
+    .data(valuesToShow)
+    .enter()
+    .append("text")
+      .attr('x', xLabel)
+      .attr('y', function(d){ return height - size(d) } )
+      .text( function(d){ return d } )
+      .style("font-size", 10)
+      .attr('alignment-baseline', 'middle')
+}
 
 
     // Salse & Revenue Chart
